@@ -25,45 +25,71 @@ def kappa_table(M):
     np.minimum.at(kap, didx, A+B)
     return du, kap   # digits d, costs kappa(d)
 
-def t_lower_dp(M, m, twoL, W, verbose=False):
+def t_lower_dp(M, m, twoL, W, verbose=False, ckpt=None):
     du, kap = kappa_table(M)
     Cmax = twoL          # cost dimension 0..twoL
     # symmetric half-storage: t = |sum d| in 0..W ; state count(c, s) = count(c, -s)
     f = np.zeros((Cmax+1, W+1), dtype=np.int64)
     f[0,0] = 1
     shift = 0
+    start_step = 0
+    if ckpt is not None:
+        import os
+        if os.path.exists(ckpt):
+            z = np.load(ckpt)
+            f = z['f']; shift = int(z['shift']); start_step = int(z['step'])
+            assert f.shape == (Cmax+1, W+1), "checkpoint shape mismatch"
+            print(f"  resumed from checkpoint: step {start_step}, shift {shift}", flush=True)
     # rescale threshold: each target state accumulates <= 377 summands, each < CAP,
     # so CAP = 2^53 keeps every accumulation < 377*2^53 < 2^63 (no int64 overflow).
     CAP = np.int64(1)<<53
-    for step in range(m):
+    kmax = int(kap.max())
+    pairs = list(zip(du.tolist(), kap.tolist()))
+    BLK = 4096
+    block = np.zeros((BLK, W+1), dtype=np.int64)   # persistent temp (one block)
+    # In-place descending-block update: row c of the new state depends only on OLD
+    # rows <= c, so processing blocks from the top down and writing each block back
+    # after it is fully computed uses a single state array (halves memory, no per-step
+    # allocation churn).
+    import time
+    for step in range(start_step, m):
         mx = f.max()
         while mx >= CAP:
             f >>= 1            # floor halving: preserves lower-bound invariant
             shift += 1
             mx = f.max()
-        g = np.zeros_like(f)
-        for d, k in zip(du.tolist(), kap.tolist()):
-            # per-signed-state recursion, targets u >= 0 only (symmetry f(c,s)=f(c,-s)):
-            # g[c, u] += f_signed(c-k, u-d) = f[c-k, |u-d|]  when |u-d| <= W
-            # decomposed into pure slice ops (no fancy indexing):
-            rows_dst = slice(k, Cmax+1); rows_src = slice(0, Cmax+1-k)
-            if d >= 0:
-                # (a) u >= d: src = u-d in [0, W-d]
-                if d <= W:
-                    g[rows_dst, d:W+1] += f[rows_src, 0:W+1-d]
-                # (b) 0 <= u < d: src = d-u in [d-W, d] intersect [1, W] -> u in [max(0,d-W), d-1]
-                ulo = max(0, d-W); uhi = min(d-1, W)
-                if ulo <= uhi:
-                    # src = d-u runs d-ulo down to d-uhi: reversed slice view
-                    g[rows_dst, ulo:uhi+1] += f[rows_src, d-ulo:d-uhi-1 if d-uhi-1>=0 else None:-1]
-            else:
-                ad = -d
-                # u - d = u + ad >= ad > 0 always: src = u+ad <= W -> u <= W-ad
-                if ad <= W:
-                    g[rows_dst, 0:W+1-ad] += f[rows_src, ad:W+1]
-        f = g
-        if verbose and (step+1) % 32 == 0:
-            print(f"  step {step+1}/{m} shift={shift} max={f.max()}", flush=True)
+        rmax = min(Cmax, (step+1)*kmax)            # rows beyond this are zero
+        c1 = rmax + 1
+        while c1 > 0:
+            c0 = max(0, c1 - BLK)
+            nb = c1 - c0
+            blk = block[:nb]
+            blk[:] = 0
+            for d, k in pairs:
+                # dst rows r in [max(c0,k), c1), src rows r-k (old values: strictly
+                # below the block for k >= nb, within the not-yet-written f otherwise)
+                r0 = max(c0, k)
+                if r0 >= c1: continue
+                src = f[r0-k:c1-k]
+                dst = blk[r0-c0:c1-c0]
+                if d >= 0:
+                    if d <= W:
+                        dst[:, d:W+1] += src[:, 0:W+1-d]
+                    ulo = max(0, d-W); uhi = min(d-1, W)
+                    if ulo <= uhi:
+                        dst[:, ulo:uhi+1] += src[:, d-ulo:d-uhi-1 if d-uhi-1>=0 else None:-1]
+                else:
+                    ad = -d
+                    if ad <= W:
+                        dst[:, 0:W+1-ad] += src[:, ad:W+1]
+            f[c0:c1] = blk
+            c1 = c0
+        if verbose and (step+1) % 8 == 0:
+            print(f"  [{time.strftime('%H:%M:%S')}] step {step+1}/{m} shift={shift} max={f.max()}", flush=True)
+        if ckpt is not None and (step+1) % 16 == 0 and step+1 < m:
+            np.savez(ckpt + '.tmp.npz', f=f, shift=shift, step=step+1)
+            import os
+            os.replace(ckpt + '.tmp.npz', ckpt)
     # final: admissible states c + t <= twoL
     # overflow-safe exact tally: partial sums of <=512 values (512 * 2^62 would overflow, but
     # values are < 2^62 only transiently; post-step values < 377*CAP = 2^61.6, and 512-chunk
@@ -117,7 +143,7 @@ if __name__ == "__main__" and len(sys.argv) > 1:
 
 def run_full(m, twoL, W):
     M = semigroup([24,26,36,39], 189)
-    val, sh = t_lower_dp(M, m, twoL, W, verbose=True)
+    val, sh = t_lower_dp(M, m, twoL, W, verbose=True, ckpt=f"ckpt_m{m}.npz")
     # accurate log via Decimal
     from decimal import Decimal, getcontext
     getcontext().prec = 60

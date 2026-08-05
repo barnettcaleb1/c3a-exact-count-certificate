@@ -24,7 +24,7 @@ more tail mass, so it brackets the primary from below:
 | 8 | 755 | 452 | exact match | exact match | |
 | 64 | 6040 | 2539 | 353.16045237 | 353.16047971 | mine −2.7e−5 (tail loss) |
 | 128 | 12002 | 3591 | 708.73932377 | 709.69893323 | mine looser; still certifies θ ≥ 1.18455 at m=128 alone |
-| 256 | 23846 | 5078 | in progress; will be appended as indep_T_m256.json | (certificate value) | |
+| 256 | 23846 | 5078 | 1384.13628508 | 1421.85363958 | mine much looser at this depth (floor-halving tail loss compounds: certifies only θ ≥ 1.1626 alone); included for completeness — the no-float record confirmation comes from the m=128 row |
 
 The tdp.c side was separately validated against CRT-exact ground truth at m = 8 and
 m = 16 (certified-lower at every threshold, both rounding and rescale regimes active)
