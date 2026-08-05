@@ -1,0 +1,45 @@
+{
+ "problem": "teorth/optimizationproblems constant 3a (exact count record)",
+ "target_to_exceed": "1.1835129324",
+ "construction": {
+  "mask_semigroup_generators": [
+   24,
+   26,
+   36,
+   39
+  ],
+  "mask_interval": [
+   0,
+   189
+  ],
+  "mask_size": 99,
+  "base_Q": 379,
+  "m_digits": 256,
+  "budget_L": 11923,
+  "definition": "U = { sum a_i Q^i : a_i in mask, sum a_i <= L }"
+ },
+ "dp_parameters": {
+  "Kmax_budget_dim": 23846,
+  "corridor_W": 5078,
+  "float_dp": "C float64, fesetround(FE_DOWNWARD), NEON+scalar, power-of-two rescaling (exact); see tdp.c"
+ },
+ "verified_inequalities": {
+  "T_lower <= |U-U|": "by construction (witness realizability, F2)",
+  "|U+U| <= N_upper": "by construction (carry-free digit strings, F1)",
+  "|U-U| <= D_upper": "by construction (min-cost necessity, F2)",
+  "D_upper < q": true,
+  "T_lower > N_upper": true,
+  "theta_lower > target": true
+ },
+ "theta_certified_lower_bound": "1.187382305438637309089264177964",
+ "theta_upper_estimate": "1.187382305438637309089264177965",
+ "margin_over_target": "0.003869373038637",
+ "log10_maxU_approx": 659.8306077561625,
+ "runtime_verify_sec": 631.5
+}
+N_upper  = 6400318226394525128975432449966464976054...6037955802242753658039827874124916559271<494 digits>
+T_lower  = (num)  3185588997743993552681791346392751198921...8125392333130382447510493797541824430080<618 digits>  / 2^ 0
+D_upper  = 1010851916010929055503513030495142501069...0666851253284139306725729322846917974017<620 digits>
+maxU     = 6770297551700694193235046398295437912901...4789228033705936422054450752214701348291<660 digits>
+theta_lo = 1.18738230543863730908926417796496698420585344353678552843302
+RESULT: theta_certified = 1.187382305438637309089264177964 >  target 1.1835129324

@@ -1,0 +1,119 @@
+================================================================================
+ COMPUTATIONAL CERTIFICATE — constant 3a (exact-count record)
+ theta(U) = 1 + log(|U-U|/|U+U|) / log(2*max(U)+1)
+================================================================================
+
+RESULT
+  theta(U) > 1.187382305438637309089264177964
+           > 1.1835129324   (previous record target)
+  margin over target: 0.003869373038637
+
+CONSTRUCTION
+  Mask:  M = numerical semigroup <24,26,36,39>
+             intersected with [0, 189]     (|M| = 99, 0 in M)
+  Base:  Q = 2*189 + 1 = 379
+  Set:   U = { sum_(i=0)^(m-1) a_i Q^i : a_i in M, sum_i a_i <= L }
+         with m = 256 digits and budget L = 11923.
+  U is finite, 0 in U (all-zero string), and max(U) has ~659.8
+  decimal digits, so U is represented and counted purely via digit-string DPs.
+
+CERTIFIED QUANTITIES (all directions safe)
+  N_upper  = exact #{(s_i) in (M+M)^m : sum s_i <= 2L}          >= |U+U|
+  T_lower  = certified-lower count of a realizable subset of
+             {(d_i) in (M-M)^m : sum kappa(d_i) + |sum d_i| <= 2L} <= |U-U|
+  D_upper  = exact #{(d_i) in (M-M)^m : sum kappa(d_i) <= 2L}   >= |U-U|
+  maxU     = exact (greedy, optimality proved in F3 below)
+  q        = 2*maxU + 1                                            exact
+
+  N_upper = 64003182263945251289754324499664649760547332528149534770250914111298771275165062091688195058455529970314401692127984663180837501588173047956486901962478979642721033907733346033896074036829814780835923509126955512076568815847242522507095323313680597110774895026986642388881135319997629842125631574192870186109646214947000153240411187920814665833000094093989477104822963230677164582169270171387471362531853031894995587722592057093307235714351606740712972776037955802242753658039827874124916559271
+
+  T_lower = 318558899774399355268179134639275119892121652673272007988728155377558908229284490890219267802089527396303750830287187437432966077607067240182677252046946408342993521014884562835050408516784994703363384906949648005807298187446080889619098859105260984691584748149908546416901909080029570706312076984084675866191421128668505931493433915810268041178723948984800587044078409625191803143093507429741477857771477576193749241604613457849152417207926923355624469515496236276771519187985922848918350683678663696403940394471961525232375341245968263728441282734737876954418242395394779747508125392333130382447510493797541824430080
+
+  D_upper = 10108519160109290555035130304951425010694009536253769539934150709661481605102474027593741889680449279531315066332593614025886506409145213998761390523874266199449923882775223014835561354582095991480988228862252328303834436046834151435137375071519502910193993573251750255495352218784261351581854012015805840487579236097668787209076587496093311938801056572656973041128006999117548679663565704447035743312743719647452201707490183740771583170902402981680405079568142779335142990332484562670030016129575115723065485933012299777370587081417562530732570611463946234513347701133352464762810666851253284139306725729322846917974017
+
+  maxU    = 677029755170069419323504639829543791290153096586276350853871587797556650910131834780793994212680742034205707290422307575481785646053638081373351625778612851548076901727037701778916300892707317886585401642518397580076056852685267837395269496139374378661630926476083612592418547584403553429964363885033111193114087220809318910612955898084796235247190400000448987451046464676626373879696289251051783598877844886577738027608188957108576614184615313527726180502401103904224322678121122314300491267985271780559395792878800450421148381597561348058108820539096581983545316578309521144078297777447270109093827927321108196739547584789228033705936422054450752214701348291
+
+VERIFIED INEQUALITIES
+  (i)   T_lower <= |U-U|          [F2: every counted string realizable, distinct]
+  (ii)  |U+U|  <= N_upper         [F1: carry-free digit strings, injective]
+  (iii) |U-U|  <= D_upper < q     [F2 necessity + exact integer comparison]
+        => |U-U| < 2*max(U) + 1   (admissibility condition of constant 3a)
+  (iv)  theta(U) >= 1 + (ln T_lower - ln N_upper)/ln q
+                 >  1.1835129324
+        evaluated with directed rounding (Decimal, prec 60: ln floor/ceil in the
+        safe direction per term, floor subtraction/division; 2-ulp margins).
+
+MATHEMATICAL FACTS
+  F1 (sums). Digits of u in U satisfy 0 <= a_i <= B=189 <= Q-1: base-Q strings
+     are unique. For u,v in U, a_i + b_i <= 2B = Q-1: addition is carry-free,
+     so u+v determines the string (s_i)=(a_i+b_i) in (M+M)^m uniquely, and
+     sum_i s_i = (sum a_i)+(sum b_i) <= 2L. Distinct sums give distinct
+     strings, hence |U+U| <= N_upper.
+  F2 (differences). With |d_i| <= B and Q = 2B+1, balanced base-Q strings are
+     unique, so u-v <-> (d_i)=(a_i-b_i) in (M-M)^m bijectively (on U-U).
+     kappa(d) := min{ a+b : a,b in M, a-b=d }.
+     Necessity: any u,v realizing (d_i) satisfy
+       sum kappa(d_i) <= sum (a_i+b_i) <= 2L, hence |U-U| <= D_upper.
+     Sufficiency: take the minimal witness alpha_i=(kappa(d_i)+d_i)/2,
+     beta_i=(kappa(d_i)-d_i)/2 (both in M by definition of kappa). Then
+       sum alpha_i = (sum kappa + sum d)/2 <= (sum kappa + |sum d|)/2 <= L
+       sum beta_i  = (sum kappa - sum d)/2 <= (sum kappa + |sum d|)/2 <= L,
+     so u = sum alpha_i Q^i and v = sum beta_i Q^i are in U and u-v has
+     string (d_i). Distinct strings are distinct differences: T_lower <= |U-U|.
+  F3 (maxU greedy). To maximize sum a_i Q^i under sum a_i <= L: raising the
+     digit at position i by delta gains delta*Q^i, while delta budget spent at
+     positions < i gains at most delta*Q^(i-1)*Q/(Q-1) < delta*Q^i. Hence the
+     top-down greedy (largest a in M with a <= remaining budget) is optimal;
+     0 in M keeps it feasible.
+
+DP / ROUNDING GUARANTEES
+  * N_upper, D_upper: exact integer arithmetic (Python big ints). The counts
+    are prefix sums of coefficients of P(x)^m truncated at degree 2L, computed
+    by packed-integer polynomial powering; slot width > m*log2(P(1)) + 32 bits
+    excludes slot overflow. Independently re-verified modulo two 31-bit primes
+    by a direct per-position convolution DP (different algorithm & code path).
+  * T_lower: C program tdp.c (float64). ALL float additions execute under
+    fesetround(FE_DOWNWARD) (runtime self-test asserts scalar + NEON adds
+    round down), so every stored value is <= the exact count scaled by 2^-shift.
+    Rescaling multiplies by exact powers of two. Values lost to underflow and
+    strings dropped by the prefix corridor |d_1+...+d_j| <= W = 5078
+    only decrease the bound. The binary output (doubles = exact dyadic
+    rationals) is summed exactly as Python Fractions.
+  * theta: T_lower/N_upper > 1 checked exactly; ln evaluated with directed
+    rounding (floor for T_lower, ceil for N_upper and q); since the numerator
+    is positive, dividing its floor by an upper bound on ln q gives a valid
+    lower bound on theta - 1.
+
+VALIDATION AGAINST BRUTE FORCE (validate.py, validate_c.py)
+  * Small analog mask <3,5> cap [0,7] (B=7, Q=15), m=2,3, many budgets:
+    enumeration of U, U+U, U-U confirms N_upper >= |U+U|, T <= |U-U| <= D_upper,
+    greedy maxU == enumerated max == reference DP; per-string witness
+    realizability checked exhaustively.
+  * Real mask, m=2 (L=120,189,260) and m=3 (L=130): same checks by enumeration.
+  * Packed-integer polynomial powering == direct convolution reference on all
+    small cases; mod-p re-verification at full scale.
+  * C DP == exact int64 reference DP at m=6 (real mask), corridors W=1134 and
+    W=260: float64 exact, float32 within 6e-6 below (safe direction).
+
+PARAMETERS / PROVENANCE
+  m = 256, L = 11923 (2L = 23846), Kmax = 23846, corridor W = 5078
+  limit value of this mask family: 1.1893936243 (lambda* = 0.0201794,
+  mu = E[kappa] = 92.536; reproduced by mask_common.py as a sanity check)
+  q = 2*maxU+1 = 135405951034013883864700927965908758258030619317255270170774...(661 digits)
+
+FILES
+  mask_common.py  mask, alphabets, kappa, limit-value check
+  exact1d.py      exact packed-int polynomial powering; greedy maxU
+  tdp.c           certified float64 DP (FE_DOWNWARD), tdp64/tdp32 binaries
+  validate.py     brute-force validation (small analog + real mask small m)
+  validate_c.py   C DP vs exact reference validation
+  scan.py         (m, L) scan driver
+  verify.py       final self-contained verifier -> certificate_m256.json
+  certificate_m256.json   machine-readable certificate (this file's source)
+
+REPRODUCTION
+  python3 mask_common.py                 # limit sanity check (1.1893936243)
+  python3 validate.py && python3 validate_c.py
+  clang -O2 -frounding-math -DREALT=double -o tdp64 tdp.c -lpthread -lm
+  python3 verify.py 256 23846      # ~10 min + DP time
+================================================================================
